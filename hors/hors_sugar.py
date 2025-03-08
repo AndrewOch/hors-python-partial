@@ -37,7 +37,7 @@ def preprocess_today(phrase: str) -> str:
 
 def process_phrase(phrase: str, now: Optional[PartialDateTime] = None) -> HorsParseResult:
     phrase = preprocess(phrase)
-    now = now or PartialDateTime.now()
+    now = now or PartialDateTime()
     hors_result = parse(phrase, now)
     if not hors_result.dates:
         phrase = preprocess_today(phrase)
