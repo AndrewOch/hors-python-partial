@@ -33,7 +33,7 @@ class MonthRecognizer(Recognizer):
             elif g1 == 'x' and not month_future:
                 year += 1
 
-        date = AbstractPeriod(PartialDateTime(year, month, 1))
+        date = AbstractPeriod(PartialDateTime(year, month))
         date.fix(FixPeriod.MONTH)
         if year_fixed:
             date.fix(FixPeriod.YEAR)

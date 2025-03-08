@@ -19,7 +19,6 @@ class DayOfWeekRecognizer(Recognizer):
 
         if match.group(1) is None:
             date.date = now + timedelta(days=diff)
-            print(f"From {now} to date {date.date}")
             date.fix(FixPeriod.DAY)
             date.fix_day_of_week = True
         else:
@@ -35,8 +34,6 @@ class DayOfWeekRecognizer(Recognizer):
             elif v == 'u':
                 date.date = now + timedelta(days=diff)
             date.fix_down_to(FixPeriod.DAY)
-
-        print(f"From {now} to date {date.date}: {diff} days")
 
         s, e = match.span()
         data.replace_tokens_by_dates(s, (e - s), date)

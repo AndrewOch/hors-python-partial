@@ -15,7 +15,7 @@ class YearRecognizer(Recognizer):
         except ValueError:
             n = 0
         year = ParserUtils.get_year_from_number(n)
-        date = AbstractPeriod(PartialDateTime(year, 1, 1))
+        date = AbstractPeriod(PartialDateTime(year))
         date.fix(FixPeriod.YEAR)
         data.replace_tokens_by_dates(s, (e - s), date)
         return True

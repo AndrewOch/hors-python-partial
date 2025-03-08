@@ -10,7 +10,8 @@ class TimeRecognizer(Recognizer):
     regex_pattern = r'([rvgd])?([fot])?(Q|H)?(h|(0)(h)?)((0)e?)?([rvgd])?'
 
     def parse_match(self, data: DatesRawData, match, now: PartialDateTime) -> bool:
-        if match.group(5) is not None or match.group(6) is not None or match.group(4) is not None or match.group(1) is not None or match.group(9):
+        if match.group(5) is not None or match.group(6) is not None or match.group(4) is not None or match.group(
+                1) is not None or match.group(9):
             if match.group(5) is None:
                 part_of_day = match.group(9) if match.group(9) is not None else (match.group(1) or '')
                 if part_of_day not in ['d', 'g'] and match.group(2) is None:
@@ -57,7 +58,7 @@ class TimeRecognizer(Recognizer):
                     if hours == 24:
                         hours = 0
 
-                date.time = timedelta(seconds=hours*60*60 + minutes*60)
+                date.time = timedelta(seconds=hours * 60 * 60 + minutes * 60)
                 s, e = match.span()
                 to_time = data.tokens[s]
                 data.replace_tokens_by_dates(s, (e - s), date)
