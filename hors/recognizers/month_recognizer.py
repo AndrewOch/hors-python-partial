@@ -4,8 +4,8 @@ from .recognizer import Recognizer
 from ..dict import Keywords
 from ..models import AbstractPeriod, DatesRawData
 from ..models.parser_models import FixPeriod
+from ..partial_date.partial_datetime import PartialDateTime
 from ..utils import ParserUtils
-from .recognizer import Recognizer
 
 
 class MonthRecognizer(Recognizer):
@@ -33,7 +33,7 @@ class MonthRecognizer(Recognizer):
             elif g1 == 'x' and not month_future:
                 year += 1
 
-        date = AbstractPeriod(datetime(year, month, 1))
+        date = AbstractPeriod(PartialDateTime(year, month, 1))
         date.fix(FixPeriod.MONTH)
         if year_fixed:
             date.fix(FixPeriod.YEAR)

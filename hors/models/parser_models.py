@@ -90,5 +90,5 @@ class DateTimeToken(IHasEdges):
         return self.__duplicate_group
 
     def __str__(self) -> str:
-        return f'[Type={ self.type }, From={ self.date_from.isoformat() }, To={ self.date_to.isoformat() }, ' +\
+        return f'[Type={ self.type }, From={ self.date_from.__str__() }, To={ self.date_to.__str__() }, ' +\
             f'Span={ self.span }, HasTime={ self.has_time }, StartIndex={ self.start }, EndIndex={ self.end }]'

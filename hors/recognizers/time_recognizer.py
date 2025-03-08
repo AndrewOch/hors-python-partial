@@ -1,15 +1,15 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from .recognizer import Recognizer
 from ..models import AbstractPeriod, DatesRawData
 from ..models.parser_models import FixPeriod
-from .recognizer import Recognizer
+from ..partial_date.partial_datetime import PartialDateTime
 
 
 class TimeRecognizer(Recognizer):
     regex_pattern = r'([rvgd])?([fot])?(Q|H)?(h|(0)(h)?)((0)e?)?([rvgd])?'
 
-    def parse_match(self, data: DatesRawData, match, now: datetime) -> bool:
+    def parse_match(self, data: DatesRawData, match, now: PartialDateTime) -> bool:
         if match.group(5) is not None or match.group(6) is not None or match.group(4) is not None or match.group(1) is not None or match.group(9):
             if match.group(5) is None:
                 part_of_day = match.group(9) if match.group(9) is not None else (match.group(1) or '')

@@ -1,18 +1,17 @@
 from typing import List
-from datetime import datetime
 
 from .recognizer import Recognizer
 from ..dict import Keywords
 from ..models import AbstractPeriod, DatesRawData
 from ..models.parser_models import FixPeriod
+from ..partial_date.partial_datetime import PartialDateTime
 from ..utils import ParserUtils
-from .recognizer import Recognizer
 
 
 class DaysMonthRecognizer(Recognizer):
     regex_pattern = r'((0N?)+)(M|#)'
 
-    def parse_match(self, data: DatesRawData, match, now: datetime) -> bool:
+    def parse_match(self, data: DatesRawData, match, now: PartialDateTime) -> bool:
         dates: List[AbstractPeriod] = []
         month_fixed = False
         s, e = match.span()
@@ -34,7 +33,7 @@ class DaysMonthRecognizer(Recognizer):
             if day <= 0:
                 continue
 
-            period = AbstractPeriod(datetime(now.year, month,
+            period = AbstractPeriod(PartialDateTime(now.year, month,
                 ParserUtils.get_day_valid_for_month(now.year, month, day)))
 
             period.fix(FixPeriod.WEEK, FixPeriod.DAY)
@@ -44,7 +43,7 @@ class DaysMonthRecognizer(Recognizer):
             dates.append(period)
 
             if dates and dates[-1].date < period.date and not month_fixed:
-                period.date = datetime(now.year, month + 1,
+                period.date = PartialDateTime(now.year, month + 1,
                     ParserUtils.get_day_valid_for_month(now.year, month + 1, day))
 
         data.replace_tokens_by_dates(s, (e - s), *dates)

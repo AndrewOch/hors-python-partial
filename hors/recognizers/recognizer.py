@@ -1,9 +1,8 @@
-from typing import List, Set, Callable, Any
-from datetime import datetime
 from re import finditer
+from typing import List, Set, Callable, Any
 
 from ..models import DatesRawData
-
+from ..partial_date.partial_datetime import PartialDateTime
 
 StrProvider = Callable[[], str]
 RecognizerMatcher = Callable[[Any], bool]
@@ -12,10 +11,10 @@ RecognizerMatcher = Callable[[Any], bool]
 class Recognizer:
     regex_pattern: str
 
-    def parse_match(self, data: DatesRawData, match, now: datetime):
+    def parse_match(self, data: DatesRawData, match, now: PartialDateTime):
         pass
 
-    def parse_tokens(self, data: DatesRawData, now: datetime) -> None:
+    def parse_tokens(self, data: DatesRawData, now: PartialDateTime) -> None:
         Recognizer.for_all_matches(data.get_pattern, self.regex_pattern, lambda m: self.parse_match(data, m, now))
 
     @staticmethod

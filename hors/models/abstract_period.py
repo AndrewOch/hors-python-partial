@@ -1,15 +1,14 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from copy import deepcopy
-
 from ..models.parser_models import FixPeriod, MAX_PERIOD
 from .i_has_edges import IHasEdges
+from ..partial_date.partial_datetime import PartialDateTime
 
-
-HALF_OF_DAY_IN_SEC = 12*60*60
+HALF_OF_DAY_IN_SEC = 12 * 60 * 60
 
 
 class AbstractPeriod(IHasEdges):
-    date: datetime
+    date: PartialDateTime
     time: timedelta = timedelta(0)
     fixed: int = 0
     span: timedelta = timedelta(0)
@@ -18,17 +17,16 @@ class AbstractPeriod(IHasEdges):
     fix_day_of_week: bool = False
 
     def __init__(self,
-        date: datetime = datetime(1, 1, 1),
-        time: timedelta = timedelta(0),
-        span: timedelta = timedelta(0),
-        fixed: int = 0,
-        span_direction: int = 0,
-        duplicate_group: int = -1,
-        fix_day_of_week: bool = False,
-        start: int = 0,
-        end: int = 0
-    ) -> None:
-        self.date = date
+                 date: PartialDateTime = None,
+                 time: timedelta = timedelta(0),
+                 span: timedelta = timedelta(0),
+                 fixed: int = 0,
+                 span_direction: int = 0,
+                 duplicate_group: int = -1,
+                 fix_day_of_week: bool = False,
+                 start: int = 0,
+                 end: int = 0) -> None:
+        self.date = date if date is not None else PartialDateTime()
         self.time = time
         self.span = span
         self.fixed = fixed
@@ -47,7 +45,7 @@ class AbstractPeriod(IHasEdges):
 
     def fix_down_to(self, period: FixPeriod) -> None:
         for i in reversed(range(MAX_PERIOD)):
-            to_fix = FixPeriod(2**i)
+            to_fix = FixPeriod(2 ** i)
             if to_fix.value < period.value:
                 return
             self.fix(to_fix)
@@ -56,29 +54,31 @@ class AbstractPeriod(IHasEdges):
         return deepcopy(self)
 
     def is_fixed(self, period: FixPeriod) -> bool:
-        return (self.fixed&period.value) > 0
+        return (self.fixed & period.value) > 0
 
     def min_fixed(self) -> FixPeriod:
         for i in reversed(range(MAX_PERIOD)):
-            p = FixPeriod(2**i)
+            p = FixPeriod(2 ** i)
             if self.is_fixed(p):
                 return p
         return FixPeriod.NONE
 
     def max_fixed(self) -> FixPeriod:
         for i in range(MAX_PERIOD):
-            p = FixPeriod(2**i)
+            p = FixPeriod(2 ** i)
             if self.is_fixed(p):
                 return p
         return FixPeriod.NONE
 
     def __str__(self) -> str:
-        return f'[Date={ self.date.isoformat() }, Time={ str(self.time) }, Fixed={ bin(self.fixed) }]'
+        return f'[Date={self.date}, Time={str(self.time)}, Fixed={bin(self.fixed)}]'
 
     @staticmethod
-    def take_day_of_week_from(current: datetime, take: datetime, forward: bool = False) -> datetime:
-        need_dow = take.weekday() + 1
-        current_dow = current.weekday() + 1
+    def take_day_of_week_from(current: PartialDateTime, take: PartialDateTime,
+                              forward: bool = False) -> PartialDateTime:
+        # Обращаемся к свойству weekday без круглых скобок
+        need_dow = take.weekday + 1
+        current_dow = current.weekday + 1
         diff = need_dow - current_dow
         if forward and diff < 0:
             diff += 7
@@ -99,10 +99,10 @@ class AbstractPeriod(IHasEdges):
             base.span += cover.span
 
         if cover.is_fixed(FixPeriod.YEAR) and not base.is_fixed(FixPeriod.YEAR):
-            base.date = datetime(cover.date.year, cover.date.month, cover.date.day)
+            base.date = PartialDateTime(year=cover.date.year, month=cover.date.month, day=cover.date.day)
             base.fix(FixPeriod.YEAR)
         if cover.is_fixed(FixPeriod.MONTH) and not base.is_fixed(FixPeriod.MONTH):
-            base.date = datetime(base.date.year, cover.date.month, cover.date.day)
+            base.date = base.date.replace(month=cover.date.month)
             base.fix(FixPeriod.MONTH)
 
         if cover.is_fixed(FixPeriod.WEEK) and not base.is_fixed(FixPeriod.WEEK):
@@ -110,7 +110,7 @@ class AbstractPeriod(IHasEdges):
                 base.date = AbstractPeriod.take_day_of_week_from(cover.date, base.date)
                 base.fix(FixPeriod.WEEK)
             elif not cover.is_fixed(FixPeriod.DAY):
-                base.date = datetime(base.date.year, base.date.month, cover.date.day)
+                base.date = base.date.replace(day=cover.date.day)
                 base.fix(FixPeriod.WEEK)
         elif base.is_fixed(FixPeriod.WEEK) and cover.is_fixed(FixPeriod.DAY):
             base.date = AbstractPeriod.take_day_of_week_from(base.date, cover.date)
@@ -119,10 +119,11 @@ class AbstractPeriod(IHasEdges):
         if cover.is_fixed(FixPeriod.DAY) and not base.is_fixed(FixPeriod.DAY):
             if cover.fix_day_of_week:
                 base.date = AbstractPeriod.take_day_of_week_from(
-                    datetime(base.date.year, base.date.month, base.date.day if base.is_fixed(FixPeriod.WEEK) else 1),
+                    PartialDateTime(year=base.date.year, month=base.date.month,
+                                    day=(base.date.day if base.is_fixed(FixPeriod.WEEK) else 1)),
                     cover.date, not base.is_fixed(FixPeriod.WEEK))
             else:
-                base.date = datetime(base.date.year, base.date.month, cover.date.day)
+                base.date = base.date.replace(day=cover.date.day)
             base.fix(FixPeriod.WEEK, FixPeriod.DAY)
 
         time_got = False
@@ -148,10 +149,8 @@ class AbstractPeriod(IHasEdges):
                 time_got = True
 
         if time_got and base.span_direction != 0 and cover.span_direction == 0:
-            base.span += base.time*base.span_direction
+            base.span += base.time * base.span_direction
 
         base.start = min(base.start, cover.start)
         base.end = max(base.end, cover.end)
-
         return True
-    # def collapse_two(base: AbstractPeriod, cover: AbstractPeriod, is_linked: bool) -> bool:

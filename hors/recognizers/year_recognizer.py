@@ -1,10 +1,8 @@
-from datetime import datetime
-
 from .recognizer import Recognizer
 from ..models import AbstractPeriod, DatesRawData
 from ..models.parser_models import FixPeriod
+from ..partial_date.partial_datetime import PartialDateTime
 from ..utils import ParserUtils
-from .recognizer import Recognizer
 
 
 class YearRecognizer(Recognizer):
@@ -17,7 +15,7 @@ class YearRecognizer(Recognizer):
         except ValueError:
             n = 0
         year = ParserUtils.get_year_from_number(n)
-        date = AbstractPeriod(datetime(year, 1, 1))
+        date = AbstractPeriod(PartialDateTime(year, 1, 1))
         date.fix(FixPeriod.YEAR)
         data.replace_tokens_by_dates(s, (e - s), date)
         return True

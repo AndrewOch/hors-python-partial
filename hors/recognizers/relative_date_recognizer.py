@@ -1,15 +1,15 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from .recognizer import Recognizer
 from ..models import AbstractPeriod, DatesRawData
 from ..models.parser_models import FixPeriod
-from .recognizer import Recognizer
+from ..partial_date.partial_datetime import PartialDateTime
 
 
 class RelativeDateRecognizer(Recognizer):
     regex_pattern = r'([usxy])([Ymwd])'
 
-    def parse_match(self, data: DatesRawData, match, now: datetime) -> bool:
+    def parse_match(self, data: DatesRawData, match, now: PartialDateTime) -> bool:
         date = AbstractPeriod()
         direction = 0
         m = match.group(1)

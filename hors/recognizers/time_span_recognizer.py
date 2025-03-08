@@ -1,15 +1,15 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from .recognizer import Recognizer
 from ..models import AbstractPeriod, DatesRawData
 from ..models.parser_models import FixPeriod
-from .recognizer import Recognizer
+from ..partial_date.partial_datetime import PartialDateTime
 
 
 class TimeSpanRecognizer(Recognizer):
     regex_pattern = r'(i)?((0?[Ymwdhe]N?)+)([bl])?'
 
-    def parse_match(self, data: DatesRawData, match, now: datetime) -> bool:
+    def parse_match(self, data: DatesRawData, match, now: PartialDateTime) -> bool:
         if (match.group(1) is None) != (match.group(4) is None):  # ибо приоритет is ниже =(
             letters = list(match.group(2))
             last_number = 1
@@ -53,7 +53,7 @@ class TimeSpanRecognizer(Recognizer):
                 token_index += 1
             # for l in letters:
 
-            date.date = datetime(offset.year, offset.month, offset.day)
+            date.date = PartialDateTime(offset.year, offset.month, offset.day)
             if date.is_fixed(FixPeriod.TIME):
                 date.time = timedelta(seconds=60*60*offset.hour + 60*offset.minute)
             date.span = offset - now

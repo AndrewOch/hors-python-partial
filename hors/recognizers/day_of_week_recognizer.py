@@ -1,24 +1,25 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from .recognizer import Recognizer
 from ..dict import Keywords
 from ..models import AbstractPeriod, DatesRawData
 from ..models.parser_models import FixPeriod
+from ..partial_date.partial_datetime import PartialDateTime
 from ..utils import ParserUtils
-from .recognizer import Recognizer
 
 
 class DayOfWeekRecognizer(Recognizer):
     regex_pattern = r'([usxy])?(D)'
 
-    def parse_match(self, data: DatesRawData, match, now: datetime) -> bool:
+    def parse_match(self, data: DatesRawData, match, now: PartialDateTime) -> bool:
         date = AbstractPeriod()
         day_of_week = ParserUtils.find_index(data.tokens[match.start(2)].value, Keywords.days_of_week()) + 1
-        now_day_of_week = now.weekday() + 1
+        now_day_of_week = now.weekday + 1
         diff = day_of_week - now_day_of_week
 
         if match.group(1) is None:
             date.date = now + timedelta(days=diff)
+            print(f"From {now} to date {date.date}")
             date.fix(FixPeriod.DAY)
             date.fix_day_of_week = True
         else:
@@ -34,6 +35,8 @@ class DayOfWeekRecognizer(Recognizer):
             elif v == 'u':
                 date.date = now + timedelta(days=diff)
             date.fix_down_to(FixPeriod.DAY)
+
+        print(f"From {now} to date {date.date}: {diff} days")
 
         s, e = match.span()
         data.replace_tokens_by_dates(s, (e - s), date)
