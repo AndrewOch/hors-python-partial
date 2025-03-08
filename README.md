@@ -45,6 +45,11 @@ r = hors.process_phrase('Полёт Гагарина длился с 9 утра 
 print(r.dates[0].type)  # <DateTimeTokenType.PERIOD: 2>
 print(r.dates[0].date_from)  # PartialDateTime(year=1961, month=4, day=12, hour=9)
 print(r.dates[0].date_to)  # PartialDateTime(year=1961, month=4, day=12, hour=11)
+
+r = hors.process_phrase('3 числа мы слушали Шуфутинского')
+print(r.dates[0].type)  # <DateTimeTokenType.FIXED: 1>
+print(f"{r.dates[0].date_from} | {r.dates[0].date_to}")
+# ????-??-03 00:00:00.000000 | ????-??-03 00:00:00.000000 + 23:59:59.999999
 ```
 
 ## Тестирование
