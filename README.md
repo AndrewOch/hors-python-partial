@@ -7,7 +7,7 @@
 отсылает к славянскому богу солнца – [Хорс](https://ru.wikipedia.org/wiki/%D0%A5%D0%BE%D1%80%D1%81).
 
 > Оригинальная версия библиотеки написана Денисом Пешехоновым на C# и доступна
-> на [GitHub](https://github.com/DenisNP/Hors) под лицензией MIT. Логика работы в нашем форке почти не изменена, за
+> на [GitHub](https://github.com/DenisNP/Hors) под лицензией MIT. Логика работы в форке почти не изменена, за
 > исключением ряда доработок.
 
 ## Отличия от оригинальной библиотеки
@@ -22,7 +22,7 @@
 Для установки клонируйте репозиторий и установите зависимости вручную:
 
 ```bash
-git clone https://github.com/yourusername/hors-python.git
+git clone https://github.com/yourusername/hors-python-partial.git
 cd hors-python
 pip install -r requirements.txt
 python setup.py install
