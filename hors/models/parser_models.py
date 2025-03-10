@@ -3,56 +3,57 @@ from datetime import datetime, timedelta
 from enum import Enum, auto
 
 from .i_has_edges import IHasEdges
+from ..partial_date.partial_datetime import PartialDateTime
 
 
 class FixPeriod(Enum):
-    NONE           = 0
-    TIME           = 1
+    NONE = 0
+    TIME = 1
     TIME_UNCERTAIN = 2
-    DAY            = 4
-    WEEK           = 8
-    MONTH          = 16
-    YEAR           = 32
+    DAY = 4
+    WEEK = 8
+    MONTH = 16
+    YEAR = 32
 
 
 class DateTimeTokenType(Enum):
-    FIXED         = auto()
-    PERIOD        = auto()
-    SPAN_FORWARD  = auto()
+    FIXED = auto()
+    PERIOD = auto()
+    SPAN_FORWARD = auto()
     SPAN_BACKWARD = auto()
 
 
 class PartTime(Enum):
-    NONE    = auto()
+    NONE = auto()
     QUARTER = auto()
-    HALF    = auto()
+    HALF = auto()
 
 
 class RelativeMode(Enum):
-    NONE         = auto()
-    NEXT         = auto()
-    PREVIOUS     = auto()
-    CURRENT      = auto()
+    NONE = auto()
+    NEXT = auto()
+    PREVIOUS = auto()
+    CURRENT = auto()
     CURRENT_NEXT = auto()
 
 
 class Period(Enum):
-    NONE   = auto()
+    NONE = auto()
     MINUTE = auto()
-    HOUR   = auto()
-    DAY    = auto()
-    WEEK   = auto()
-    MONTH  = auto()
-    YEAR   = auto()
+    HOUR = auto()
+    DAY = auto()
+    WEEK = auto()
+    MONTH = auto()
+    YEAR = auto()
 
 
 class DayTime(Enum):
-    NONE    = auto()
+    NONE = auto()
     MORNING = auto()
-    NOON    = auto()
-    DAY     = auto()
+    NOON = auto()
+    DAY = auto()
     EVENING = auto()
-    NIGHT   = auto()
+    NIGHT = auto()
 
 
 MAX_PERIOD: int = max(p.value for p in FixPeriod).bit_length()
@@ -60,8 +61,8 @@ MAX_PERIOD: int = max(p.value for p in FixPeriod).bit_length()
 
 class DateTimeToken(IHasEdges):
     type: DateTimeTokenType = None
-    date_from: datetime = datetime.now()
-    date_to: datetime = datetime.now()
+    date_from: PartialDateTime = PartialDateTime()
+    date_to: PartialDateTime = PartialDateTime()
     span: timedelta = None
     has_time: bool = False
 
@@ -90,5 +91,5 @@ class DateTimeToken(IHasEdges):
         return self.__duplicate_group
 
     def __str__(self) -> str:
-        return f'[Type={ self.type }, From={ self.date_from.__str__() }, To={ self.date_to.__str__() }, ' +\
-            f'Span={ self.span }, HasTime={ self.has_time }, StartIndex={ self.start }, EndIndex={ self.end }]'
+        return f'[Type={self.type}, From={self.date_from.__str__()}, To={self.date_to.__str__()}, ' + \
+            f'Span={self.span}, HasTime={self.has_time}, StartIndex={self.start}, EndIndex={self.end}]'
