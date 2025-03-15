@@ -1,5 +1,4 @@
 from datetime import timedelta
-
 from .recognizer import Recognizer
 from ..models import AbstractPeriod, DatesRawData
 from ..models.parser_models import FixPeriod
@@ -10,63 +9,42 @@ class TimeRecognizer(Recognizer):
     regex_pattern = r'([rvgd])?([fot])?(Q|H)?(h|(0)(h)?)((0)e?)?([rvgd])?'
 
     def parse_match(self, data: DatesRawData, match, now: PartialDateTime) -> bool:
-        if match.group(5) is not None or match.group(6) is not None or match.group(4) is not None or match.group(
-                1) is not None or match.group(9):
-            if match.group(5) is None:
-                part_of_day = match.group(9) if match.group(9) is not None else (match.group(1) or '')
-                if part_of_day not in ['d', 'g'] and match.group(2) is None:
-                    return False
+        # Если нет значимых групп, выходим
+        if not any([match.group(1), match.group(4), match.group(7), match.group(9)]):
+            return False
 
-            hours = 1 if match.group(5) is None else int(data.tokens[match.start(5)].value)
-            if 0 <= hours <= 23:
-                minutes = 0
-                if match.group(8) is not None:
-                    m = int(data.tokens[match.start(8)].value)
-                    if 0 <= m <= 59:
-                        minutes = m
-                elif match.group(3) is not None and hours > 0:
-                    q = match.group(3)
-                    if q == 'Q':
-                        hours -= 1
-                        minutes = 15
-                    elif q == 'H':
-                        hours -= 1
-                        minutes = 30
+        hours = None
+        minutes = 0
 
-                date = AbstractPeriod()
-                date.fix(FixPeriod.TIME_UNCERTAIN)
-                if hours > 12:
-                    date.fix(FixPeriod.TIME)
-                else:
-                    part = 'd'
-                    if match.group(9) is not None or match.group(1) is not None:
-                        part = match.group(9) if match.group(1) is None else match.group(1)
-                        date.fix(FixPeriod.TIME)
-                    else:
-                        date.fix(FixPeriod.TIME_UNCERTAIN)
+        # Обработка group(4): '0h' (часы) или '0' (минуты)
+        if match.group(4):
+            if 'h' in match.group(4):  # Часы (например, "1 час")
+                hours = int(data.tokens[match.start(5)].value)
+            else:  # Только минуты (например, "14 минут")
+                minutes = int(data.tokens[match.start(5)].value)
 
-                    if part == 'd':
-                        if hours <= 4:
-                            hours += 12
-                    elif part == 'v':
-                        if hours <= 11:
-                            hours += 12
-                    elif part == 'g':
-                        if hours >= 10:
-                            hours += 12
+        # Обработка минут из group(7) (например, "30 минут")
+        if match.group(7):
+            minutes += int(data.tokens[match.start(8)].value)
 
-                    if hours == 24:
-                        hours = 0
+        # Добавляем четверть/полчаса (Q/H)
+        if match.group(3):
+            minutes += 15 if match.group(3) == 'Q' else 30
 
-                date.time = timedelta(seconds=hours * 60 * 60 + minutes * 60)
-                s, e = match.span()
-                to_time = data.tokens[s]
-                data.replace_tokens_by_dates(s, (e - s), date)
-                if match.group(2) == 't':
-                    data.return_tokens(s, 't', to_time)
-            # if 0 <= hours <= 23:
+        # Коррекция переполнения минут
+        if minutes >= 60:
+            if hours is None:
+                hours = 0
+            hours += minutes // 60
+            minutes = minutes % 60
 
-            return True
-        #  if match.group(5) is not None or match.group(6) is not None or match.group(4) is not None or match.group(1) is not None or match.group(9):
+        # Создание временного интервала
+        total_seconds = (hours * 3600 if hours is not None else 0) + minutes * 60
+        date = AbstractPeriod()
+        date.fix(FixPeriod.TIME)
+        date.time = timedelta(seconds=total_seconds)
 
-        return False
+        # Замена токенов
+        s, e = match.span()
+        data.replace_tokens_by_dates(s, e - s, date)
+        return True

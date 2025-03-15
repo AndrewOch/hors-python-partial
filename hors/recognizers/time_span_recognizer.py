@@ -28,34 +28,39 @@ class TimeSpanRecognizer(Recognizer):
                     except ValueError:
                         last_number = 0
                 elif l == 'Y':
-                    offset = offset.replace(year=offset.year + direction*last_number)
+                    offset = offset.replace(year=offset.year + direction * last_number)
                     date.fix_down_to(FixPeriod.MONTH)
                     last_number = 1
                 elif l == 'm':
-                    offset = offset.replace(month=offset.month + direction*last_number)
+                    offset = offset.replace(month=offset.month + direction * last_number)
                     date.fix_down_to(FixPeriod.WEEK)
                     last_number = 1
                 elif l == 'w':
-                    offset += timedelta(days=7*direction*last_number)
+                    offset += timedelta(days=7 * direction * last_number)
                     date.fix_down_to(FixPeriod.DAY)
                     last_number = 1
                 elif l == 'd':
-                    offset += timedelta(days=direction*last_number)
+                    offset += timedelta(days=direction * last_number)
                     date.fix_down_to(FixPeriod.DAY)
                     last_number = 1
                 elif l == 'h':
-                    offset += timedelta(seconds=60*60*direction*last_number)
+                    offset += timedelta(seconds=60 * 60 * direction * last_number)
                     date.fix_down_to(FixPeriod.TIME)
                     last_number = 1
                 elif l == 'e':
-                    offset += timedelta(seconds=60*direction*last_number)
+                    offset += timedelta(seconds=60 * direction * last_number)
                     date.fix_down_to(FixPeriod.TIME)
                 token_index += 1
             # for l in letters:
 
             date.date = PartialDateTime(offset.year, offset.month, offset.day)
             if date.is_fixed(FixPeriod.TIME):
-                date.time = timedelta(seconds=60*60*offset.hour + 60*offset.minute)
+                seconds_offset = 0
+                if offset.hour:
+                    seconds_offset = offset.hour * 60 * 60
+                if offset.minute:
+                    seconds_offset += offset.minute * 60
+                date.time = timedelta(seconds=seconds_offset)
             date.span = offset - now
 
             s, e = match.span()

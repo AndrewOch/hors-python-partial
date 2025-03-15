@@ -97,12 +97,12 @@ class PartialDateTime:
                                weekday=new_weekday)
 
     def __add__(self, other):
-        if isinstance(other, timedelta):
-            # Если год, месяц и день заданы, применяем арифметику к известным разрядам.
+        if isinstance(other, PartialDateTime):
+            other = other.to_timedelta()
+        if isinstance(other, datetime.timedelta):
             if self.year is not None and self.month is not None and self.day is not None:
                 return self._apply_delta(other)
             else:
-                # Иначе просто суммируем relative_offset и обновляем weekday, если он задан.
                 new_offset = self.relative_offset + other
                 if self._weekday is not None:
                     offset_days = int(other.total_seconds() // (24 * 3600))
@@ -116,7 +116,14 @@ class PartialDateTime:
         return NotImplemented
 
     def __sub__(self, other):
-        if isinstance(other, timedelta):
+        if isinstance(other, PartialDateTime):
+            if self.is_complete() and other.is_complete():
+                dt1 = self.to_datetime()
+                dt2 = other.to_datetime()
+                return dt1 - dt2
+            else:
+                return self - other.to_timedelta()
+        elif isinstance(other, datetime.timedelta):
             if self.year is not None and self.month is not None and self.day is not None:
                 return self._apply_delta(-other)
             else:
@@ -130,20 +137,6 @@ class PartialDateTime:
                                        self.hour, self.minute, self.second, self.microsecond,
                                        relative_offset=new_offset,
                                        weekday=new_weekday)
-        elif isinstance(other, PartialDateTime):
-            if not (self.year and self.month and self.day and other.year and other.month and other.day):
-                raise ValueError("Невозможно вычислить разницу между неполными датами")
-            dt1 = datetime.datetime(self.year, self.month, self.day,
-                                    self.hour if self.hour is not None else 0,
-                                    self.minute if self.minute is not None else 0,
-                                    self.second if self.second is not None else 0,
-                                    self.microsecond if self.microsecond is not None else 0)
-            dt2 = datetime.datetime(other.year, other.month, other.day,
-                                    other.hour if other.hour is not None else 0,
-                                    other.minute if other.minute is not None else 0,
-                                    other.second if other.second is not None else 0,
-                                    other.microsecond if other.microsecond is not None else 0)
-            return dt1 - dt2
         return NotImplemented
 
     def _compare_components(self, other):
@@ -270,3 +263,17 @@ class PartialDateTime:
             new_date = new_date + merged_offset
 
         return new_date
+
+    def to_timedelta(self):
+        days = self.day if self.day is not None else 0
+        hours = self.hour if self.hour is not None else 0
+        minutes = self.minute if self.minute is not None else 0
+        seconds = self.second if self.second is not None else 0
+        microseconds = self.microsecond if self.microsecond is not None else 0
+        return datetime.timedelta(
+            days=days,
+            hours=hours,
+            minutes=minutes,
+            seconds=seconds,
+            microseconds=microseconds
+        )
