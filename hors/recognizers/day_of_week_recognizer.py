@@ -14,7 +14,7 @@ class DayOfWeekRecognizer(Recognizer):
     def parse_match(self, data: DatesRawData, match, now: PartialDateTime) -> bool:
         date = AbstractPeriod()
         day_of_week = ParserUtils.find_index(data.tokens[match.start(2)].value, Keywords.days_of_week()) + 1
-        now_day_of_week = now.weekday + 1
+        now_day_of_week = now.weekday + 1 if now.weekday is not None else 0
         diff = day_of_week - now_day_of_week
 
         if match.group(1) is None:

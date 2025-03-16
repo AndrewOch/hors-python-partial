@@ -43,8 +43,8 @@ def convert_to_token(period: AbstractPeriod, now) -> DateTimeToken:
         if now > period.date:
             period.date = period.date.replace(year=now.year + 1)
     elif min_fixed == FixPeriod.DAY:
-        now_dow = now.weekday + 1  # Используем свойство weekday без скобок
-        date_dow = period.date.weekday + 1
+        now_dow = now.weekday + 1 if now.weekday is not None else 0  # Используем свойство weekday без скобок
+        date_dow = period.date.weekday + 1 if period.date.weekday is not None else 0
         diff = date_dow - now_dow
         if diff <= 0:
             diff += 7
@@ -83,7 +83,9 @@ def convert_to_token(period: AbstractPeriod, now) -> DateTimeToken:
     elif max_fixed == FixPeriod.MONTH:
         token.type = DateTimeTokenType.PERIOD
         token.date_from = PartialDateTime(year=period.date.year, month=period.date.month, day=1)
-        token.date_to = PartialDateTime(year=period.date.year, month=period.date.month + 1, day=1).replace(
+        token.date_to = PartialDateTime(year=period.date.year,
+                                        month=(period.date.month + 1) if period.date.month is not None else None,
+                                        day=1).replace(
             microsecond=999)
     elif max_fixed == FixPeriod.WEEK:
         dow = period.date.weekday + 1

@@ -22,8 +22,8 @@ class MonthRecognizer(Recognizer):
         if month == 0:
             month = now.month
 
-        month_past = month < now.month
-        month_future = month > now.month
+        month_past = month < now.month if now.month is not None else False
+        month_future = month > now.month if now.month is not None else False
 
         if g1 is not None:
             if g1 == 's' and not month_past:

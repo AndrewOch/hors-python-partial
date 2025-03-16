@@ -16,16 +16,24 @@ class TimeRecognizer(Recognizer):
         hours = None
         minutes = 0
 
+        def safe_int(token_pos: int) -> int:
+            """Безопасно извлекает целое число из токена."""
+            try:
+                token = data.tokens[token_pos]
+                return int(token.value) if token.value.isdigit() else 0
+            except (IndexError, ValueError, AttributeError):
+                return 0
+
         # Обработка group(4): '0h' (часы) или '0' (минуты)
         if match.group(4):
             if 'h' in match.group(4):  # Часы (например, "1 час")
-                hours = int(data.tokens[match.start(5)].value)
+                hours = safe_int(match.start(5))
             else:  # Только минуты (например, "14 минут")
-                minutes = int(data.tokens[match.start(5)].value)
+                minutes = safe_int(match.start(5))
 
         # Обработка минут из group(7) (например, "30 минут")
         if match.group(7):
-            minutes += int(data.tokens[match.start(8)].value)
+            minutes += safe_int(match.start(8))
 
         # Добавляем четверть/полчаса (Q/H)
         if match.group(3):
