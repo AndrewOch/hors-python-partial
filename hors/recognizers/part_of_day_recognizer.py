@@ -23,7 +23,7 @@ class PartOfDayRecognizer(Recognizer):
                 hours = 23
 
             if hours != 0:
-                date = AbstractPeriod(time=timedelta(seconds=hours*60*60))
+                date = AbstractPeriod(time=timedelta(seconds=hours * 60 * 60))
                 date.fix(FixPeriod.TIME_UNCERTAIN)
 
                 start = match.span()[0]
@@ -35,6 +35,4 @@ class PartOfDayRecognizer(Recognizer):
                 data.replace_tokens_by_dates(start, length, date)
 
                 return True
-        # if match.group(1) is not None and match.group(3) is not None:
-
         return False
