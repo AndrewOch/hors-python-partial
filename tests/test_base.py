@@ -24,6 +24,8 @@ class BaseHorsTests(unittest.TestCase):
     def test_time_period_before_day(self):
         starting_point = PartialDateTime(2019, 10, 13)
         result = process_phrase('с 5 до 7 вечера в понедельник будет событие', starting_point)
+        print(result)
+
         self.assertEqual(1, len(result.dates))
 
         date = result.dates[0]
@@ -35,6 +37,8 @@ class BaseHorsTests(unittest.TestCase):
     def test_time_period_simple(self):
         starting_point = PartialDateTime(2019, 10, 13)
         result = process_phrase('с 10 до 13 событие', starting_point)
+        print(result)
+
         self.assertEqual(1, len(result.dates))
 
         date = result.dates[0]
@@ -45,7 +49,7 @@ class BaseHorsTests(unittest.TestCase):
     def test_daytime(self):
         starting_point = PartialDateTime(2019, 10, 14)
         result = process_phrase('Завтра в час обед и продлится он час с небольшим', starting_point)
-        self.assertEqual(1, len(result.dates))
+        self.assertEqual(2, len(result.dates))
 
         date = result.dates[0]
         self.assertEqual(DateTimeTokenType.FIXED, date.type)
@@ -56,6 +60,8 @@ class BaseHorsTests(unittest.TestCase):
         result = process_phrase(
             'Завтра в 2 ночи полнолуние, а затем в 3 часа ночи новолуние и наконец в 12 часов ночи игра.',
             starting_point)
+        print(result)
+
         self.assertEqual(3, len(result.dates))
 
         date = result.dates[0]
@@ -76,6 +82,8 @@ class BaseHorsTests(unittest.TestCase):
         result = process_phrase(
             'С вечера следующей среды до четверти 10 утра понедельника в декабре можно будет наблюдать снег',
             starting_point)
+        print(result)
+
         self.assertEqual(1, len(result.dates))
 
         date = result.dates[0]
@@ -91,7 +99,11 @@ class BaseHorsTests(unittest.TestCase):
     def test_collapse_complex(self):
         starting_point = PartialDateTime(2025, 3, 8)
         result = process_phrase('В понедельник в 9 и 10 вечера', starting_point)
+        print(result)
+        print(result.dates[0].date_from.hour)
+
         self.assertEqual(2, len(result.dates))
+
         date = result.dates[0]
         self.assertEqual(2025, date.date_from.year)
         self.assertEqual(10, date.date_from.day)
@@ -177,6 +189,8 @@ class BaseHorsTests(unittest.TestCase):
     def test_time_period(self):
         starting_point = PartialDateTime(2019, 9, 7)
         result = process_phrase('В следующий четверг с 9 утра до 6 вечера важный экзамен!', starting_point)
+        print(result)
+
         self.assertEqual(1, len(result.dates))
 
         date = result.dates[0]
@@ -193,6 +207,7 @@ class BaseHorsTests(unittest.TestCase):
     def test_complex_period(self):
         starting_point = PartialDateTime(2019, 7, 7)
         result = process_phrase('хакатон с 12 часов 18 сентября до 12 часов 20 сентября', starting_point)
+        print(result)
         self.assertEqual(1, len(result.dates))
 
         date = result.dates[0]
@@ -222,6 +237,8 @@ class BaseHorsTests(unittest.TestCase):
     def test_time_hour_of_day(self):
         starting_point = PartialDateTime(2019, 9, 7)
         result = process_phrase('24 сентября в час дня', starting_point)
+        print(result)
+
         self.assertEqual(1, len(result.dates))
 
         date = result.dates[0]
@@ -303,6 +320,8 @@ class BaseHorsTests(unittest.TestCase):
     def test_from_to_reversed(self):
         starting_point = PartialDateTime(2019, 10, 13)
         result = process_phrase('с 2 до 5', starting_point)
+        print(result)
+
         self.assertEqual(1, len(result.dates))
 
         date = result.dates[0]

@@ -105,7 +105,6 @@ def convert_to_token(period: AbstractPeriod, now) -> DateTimeToken:
     if period.span_direction != 0:
         token.type = DateTimeTokenType.SPAN_FORWARD if period.span_direction == 1 else DateTimeTokenType.SPAN_BACKWARD
         token.span = period.span
-
     return token
 
 
@@ -153,6 +152,7 @@ def create_date_period(match, data: DatesRawData, now: PartialDateTime, final_pe
     if match.group(3) is not None and match.group(4) is not None:
         from_date, to_date = take_from_adjacent_i(data, match.start(3), match.start(4), True)
         from_token = convert_to_token(from_date, now)
+
         to_token = convert_to_token(to_date, now)
         date_to = to_token.date_to
         resolution = to_date.max_fixed()
@@ -167,6 +167,7 @@ def create_date_period(match, data: DatesRawData, now: PartialDateTime, final_pe
                 date_to = date_to.replace(year=date_to.year + 1)
             else:
                 date_to = date_to.replace(hour=date_to.hour + 12)
+
         date_to_save = DateTimeToken()
         date_to_save.date_from = from_token.date_from
         date_to_save.date_to = date_to
@@ -175,6 +176,8 @@ def create_date_period(match, data: DatesRawData, now: PartialDateTime, final_pe
     else:
         single_date = data.dates[match.start(6)]
         date_to_save = convert_to_token(single_date, now)
+    # if match.group(3) is not None and match.group(4) is not None:
+
     s, e = match.span()
     date_to_save.set_edges(data.edges_by_index(s).start, data.edges_by_index(e - 1).end)
     next_index = len(final_periods)
@@ -186,6 +189,7 @@ def create_date_period(match, data: DatesRawData, now: PartialDateTime, final_pe
     if e - s > 1:
         data.tokens = data.tokens[:s + 1] + data.tokens[e:]
         data.dates = data.dates[:s + 1] + data.dates[e:]
+
     return True
 
 
@@ -194,6 +198,7 @@ def collapse_dates(match, data: DatesRawData, _, is_linked: bool) -> bool:
     second_date = data.dates[match.start(5)]
     if not AbstractPeriod.can_collapse(first_date, second_date):
         return False
+
     if first_date.min_fixed().value < second_date.min_fixed().value:
         AbstractPeriod.collapse_two(second_date, first_date, is_linked)
         second_date.start = first_date.start
@@ -214,10 +219,18 @@ def collapse_closest(match, data: DatesRawData, _, is_linked: bool) -> bool:
             AbstractPeriod.collapse_two(first_date, second_date, is_linked)
         else:
             AbstractPeriod.collapse_two(second_date, first_date, is_linked)
-        duplicate_group = first_date.duplicate_group if first_date.duplicate_group != -1 else (
-            second_date.duplicate_group if second_date.duplicate_group != -1 else randint(0, maxsize))
+
+        duplicate_group: int
+        if first_date.duplicate_group != -1:
+            duplicate_group = first_date.duplicate_group
+        elif second_date.duplicate_group != -1:
+            duplicate_group = second_date.duplicate_group
+        else:
+            duplicate_group = randint(0, maxsize)
+
         second_date.duplicate_group = duplicate_group
         first_date.duplicate_group = duplicate_group
+
         first_date.start = first_start
         first_date.end = first_end
         second_date.start = second_start
@@ -232,6 +245,7 @@ def fix_overlap(final_periods: List[DateTimeToken]) -> None:
             overlap_periods = [p for p in final_periods if p.overlapping_with(period) and p not in skipped]
             min_index = min(o.start for o in overlap_periods)
             max_index = max(o.end for o in overlap_periods)
+
             for p in overlap_periods:
                 p.start = min_index
                 p.end = max_index
@@ -263,6 +277,7 @@ def do_parse(tokens: List[str], text: str, split_tokens: ITuplesList, now: Parti
     if collapse_distance > 0:
         pattern = '(@)[^@t]{1,' + str(collapse_distance) + '}(?=(@))'
         Recognizer.for_all_matches(data.get_pattern, pattern, lambda m: collapse_closest(m, data, now, False), True)
+
     final_periods: List[DateTimeToken] = []
     Recognizer.for_all_matches(data.get_pattern, '(([fo]?(@)t(@))|([fo]?(@)))',
                                lambda m: create_date_period(m, data, now, final_periods))
