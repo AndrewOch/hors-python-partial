@@ -3,11 +3,14 @@ from datetime import timedelta
 
 
 class PartialDateTime:
+    LAST_DAY_OF_MONTH = -1
+
     def __init__(self,
                  year=None, month=None, day=None,
                  hour=None, minute=None, second=None, microsecond=None,
                  relative_offset=timedelta(0),
-                 weekday: int = None):  # 0 - понедельник, 6 - воскресенье
+                 weekday: int = None):
+
         self.year = year
         self.month = month
         self.day = day
@@ -17,9 +20,10 @@ class PartialDateTime:
         self.microsecond = microsecond
         self.relative_offset = relative_offset
 
-        # Если год, месяц и день заданы, вычисляем базовый weekday и корректируем его с учётом offset.
-        if year is not None and month is not None and day is not None:
-            base_wd = datetime.datetime(year, month, day).weekday()
+        self._update_last_day_of_month()
+
+        if self.year is not None and self.month is not None and self.day is not None and self.day != PartialDateTime.LAST_DAY_OF_MONTH:
+            base_wd = datetime.datetime(self.year, self.month, self.day).weekday()
             offset_days = int(relative_offset.total_seconds() // (24 * 3600))
             self._weekday = (base_wd + offset_days) % 7
         else:
@@ -54,21 +58,37 @@ class PartialDateTime:
         dt = datetime.datetime.now()
         return cls(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.microsecond)
 
+    def _update_last_day_of_month(self):
+        if self.day == PartialDateTime.LAST_DAY_OF_MONTH and self.year is not None and self.month is not None:
+            self.day = self._get_last_day_of_month(self.year, self.month)
+
+    @staticmethod
+    def _get_last_day_of_month(year, month):
+        if month == 12:
+            return 31
+        next_month = datetime.date(year, month + 1, 1)
+        last_day = next_month - datetime.timedelta(days=1)
+        return last_day.day
+
     def replace(self, **kwargs):
-        new_fields = {
-            'year': kwargs.get('year', self.year),
-            'month': kwargs.get('month', self.month),
-            'day': kwargs.get('day', self.day),
-            'hour': kwargs.get('hour', self.hour),
-            'minute': kwargs.get('minute', self.minute),
-            'second': kwargs.get('second', self.second),
-            'microsecond': kwargs.get('microsecond', self.microsecond)
-        }
+        # Строим новый объект, а не мутируем self
+        new_year = kwargs.get('year', self.year)
+        new_month = kwargs.get('month', self.month)
+        new_day = kwargs.get('day', self.day)
+        new_hour = kwargs.get('hour', self.hour)
+        new_minute = kwargs.get('minute', self.minute)
+        new_second = kwargs.get('second', self.second)
+        new_microsecond = kwargs.get('microsecond', self.microsecond)
         new_offset = kwargs.get('relative_offset', self.relative_offset)
-        new_weekday = kwargs.get('weekday', self._weekday)
-        return PartialDateTime(**new_fields,
-                               relative_offset=new_offset,
-                               weekday=new_weekday)
+        new_weekday = kwargs.get('weekday', getattr(self, '_weekday', None))
+
+        obj = PartialDateTime(
+            year=new_year, month=new_month, day=new_day,
+            hour=new_hour, minute=new_minute, second=new_second, microsecond=new_microsecond,
+            relative_offset=new_offset, weekday=new_weekday
+        )
+        # В конструкторе уже вызван _update_last_day_of_month()
+        return obj
 
     def _apply_delta(self, delta: timedelta) -> 'PartialDateTime':
         # Если год, месяц и день известны, создаем базовый datetime.

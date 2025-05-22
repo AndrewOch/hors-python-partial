@@ -1,4 +1,5 @@
 import unittest
+from datetime import timedelta
 
 from hors import process_phrase
 from hors.models.parser_models import DateTimeTokenType
@@ -333,8 +334,188 @@ class BaseHorsTests(unittest.TestCase):
         self.assertEqual(13, date_from.day)
         self.assertEqual(13, date_to.day)
 
+    def test_year_and_hour_only(self):
+        """Проверка распознавания даты с известным годом и часом."""
+        result = process_phrase("В 2025 году в 15 часов")
+        print(result)
+        self.assertEqual(1, len(result.dates))
+        date = result.dates[0]
+        self.assertEqual(2025, date.date_from.year)
+        self.assertIsNone(date.date_from.month)
+        self.assertIsNone(date.date_from.day)
+        self.assertEqual(15, date.date_from.hour)
 
-# class BaseHorsTests(unittest.TestCase):
+    def test_month_and_day_only(self):
+        """Проверка распознавания даты с известным месяцем и днем, но без года."""
+        result = process_phrase("10 января")
+        print(result)
+        self.assertEqual(1, len(result.dates))
+        date = result.dates[0]
+        self.assertIsNone(date.date_from.year)
+        self.assertEqual(1, date.date_from.month)
+        self.assertEqual(10, date.date_from.day)
+        self.assertEqual(0, date.date_from.hour)
+        self.assertEqual(0, date.date_from.minute)
+        self.assertEqual(0, date.date_from.second)
+        self.assertEqual(0, date.date_from.microsecond)
+
+        self.assertEqual(86399, date.date_to.relative_offset.seconds)
+
+    def test_time_only(self):
+        """Проверка распознавания только времени без даты."""
+        result = process_phrase("в 14:30")
+        print(result)
+        self.assertEqual(1, len(result.dates))
+        date = result.dates[0]
+        self.assertIsNone(date.date_from.year)
+        self.assertIsNone(date.date_from.month)
+        self.assertIsNone(date.date_from.day)
+        self.assertEqual(14, date.date_from.hour)
+        self.assertEqual(30, date.date_from.minute)
+
+    def test_relative_offset_with_time(self):
+        """Проверка распознавания относительного смещения с временем."""
+        result = process_phrase("через 2 дня в 10 утра")
+        print(result)
+        self.assertEqual(1, len(result.dates))
+        date = result.dates[0]
+        self.assertIsNone(date.date_from.year)
+        self.assertIsNone(date.date_from.month)
+        self.assertIsNone(date.date_from.day)
+        self.assertEqual(10, date.date_from.hour)
+        self.assertEqual(timedelta(days=2), date.date_from.relative_offset)
+
+    def test_period_with_partial_dates(self):
+        """Проверка распознавания периода с неполными датами."""
+        result = process_phrase("с 10 до 15 января")
+        print(result)
+        self.assertEqual(1, len(result.dates))
+        date = result.dates[0]
+        self.assertEqual(DateTimeTokenType.PERIOD, date.type)
+        self.assertIsNone(date.date_from.year)
+        self.assertEqual(1, date.date_from.month)
+        self.assertEqual(10, date.date_from.day)
+        self.assertEqual(0, date.date_from.hour)
+        self.assertEqual(0, date.date_from.minute)
+        self.assertEqual(0, date.date_from.second)
+        self.assertEqual(0, date.date_from.microsecond)
+
+        self.assertIsNone(date.date_to.year)
+        self.assertEqual(1, date.date_to.month)
+        self.assertEqual(15, date.date_to.day)
+        self.assertEqual(0, date.date_to.hour)
+        self.assertEqual(0, date.date_to.minute)
+        self.assertEqual(0, date.date_to.second)
+        self.assertEqual(0, date.date_to.microsecond)
+        self.assertEqual(86399, date.date_to.relative_offset.seconds)
+
+    def test_no_starting_point(self):
+        """Проверка работы без starting_point с полностью неизвестной датой."""
+        result = process_phrase("завтра")
+        print(result)
+        self.assertEqual(1, len(result.dates))
+        date = result.dates[0]
+        self.assertIsNone(date.date_from.year)
+        self.assertIsNone(date.date_from.month)
+        self.assertIsNone(date.date_from.day)
+
+        self.assertEqual(0, date.date_from.hour)
+        self.assertEqual(0, date.date_from.minute)
+        self.assertEqual(0, date.date_from.second)
+        self.assertEqual(0, date.date_from.microsecond)
+        self.assertEqual(timedelta(days=1), date.date_from.relative_offset)
+
+    def test_next_week(self):
+        starting_point = PartialDateTime(2023, 5, 22)
+        result = process_phrase("на следующей неделе", starting_point)
+        print(result)
+        self.assertEqual(1, len(result.dates))
+        date = result.dates[0]
+        self.assertEqual(DateTimeTokenType.PERIOD, date.type)
+        self.assertEqual(2023, date.date_from.year)
+        self.assertEqual(5, date.date_from.month)
+        self.assertEqual(29, date.date_from.day)
+        self.assertEqual(2023, date.date_to.year)
+        self.assertEqual(6, date.date_to.month)
+        self.assertEqual(4, date.date_to.day)
+
+    def test_last_week(self):
+        starting_point = PartialDateTime(2023, 5, 22)
+        result = process_phrase("на прошлой неделе", starting_point)
+        print(result)
+        self.assertEqual(1, len(result.dates))
+        date = result.dates[0]
+        self.assertEqual(DateTimeTokenType.PERIOD, date.type)
+        self.assertEqual(2023, date.date_from.year)
+        self.assertEqual(5, date.date_from.month)
+        self.assertEqual(15, date.date_from.day)
+        self.assertEqual(2023, date.date_to.year)
+        self.assertEqual(5, date.date_to.month)
+        self.assertEqual(21, date.date_to.day)
+
+    def test_next_month(self):
+        starting_point = PartialDateTime(2023, 5, 22)
+        result = process_phrase("в следующем месяце", starting_point)
+        print(result)
+        self.assertEqual(1, len(result.dates))
+        date = result.dates[0]
+        self.assertEqual(DateTimeTokenType.PERIOD, date.type)
+        self.assertEqual(2023, date.date_from.year)
+        self.assertEqual(6, date.date_from.month)
+        self.assertEqual(1, date.date_from.day)
+        self.assertEqual(2023, date.date_to.year)
+        self.assertEqual(6, date.date_to.month)
+        self.assertEqual(30, date.date_to.day)
+        self.assertIsNone(date.date_from.hour)
+        self.assertIsNone(date.date_to.hour)
+
+    def test_last_month(self):
+        starting_point = PartialDateTime(2023, 5, 22)
+        result = process_phrase("в прошлом месяце", starting_point)
+        print(result)
+        self.assertEqual(1, len(result.dates))
+        date = result.dates[0]
+        self.assertEqual(DateTimeTokenType.PERIOD, date.type)
+        self.assertEqual(2023, date.date_from.year)
+        self.assertEqual(4, date.date_from.month)
+        self.assertEqual(1, date.date_from.day)
+        self.assertEqual(2023, date.date_to.year)
+        self.assertEqual(4, date.date_to.month)
+        self.assertEqual(30, date.date_to.day)
+        self.assertIsNone(date.date_from.hour)
+        self.assertIsNone(date.date_to.hour)
+
+    def test_next_year(self):
+        starting_point = PartialDateTime(2023, 5, 22)
+        result = process_phrase("в следующем году", starting_point)
+        print(result)
+        self.assertEqual(1, len(result.dates))
+        date = result.dates[0]
+        self.assertEqual(DateTimeTokenType.PERIOD, date.type)
+        self.assertEqual(2024, date.date_from.year)
+        self.assertEqual(1, date.date_from.month)
+        self.assertEqual(1, date.date_from.day)
+        self.assertEqual(2024, date.date_to.year)
+        self.assertEqual(12, date.date_to.month)
+        self.assertEqual(31, date.date_to.day)
+        self.assertIsNone(date.date_from.hour)
+        self.assertIsNone(date.date_to.hour)
+
+    def test_last_year(self):
+        starting_point = PartialDateTime(2023, 5, 22)
+        result = process_phrase("в прошлом году", starting_point)
+        print(result)
+        self.assertEqual(1, len(result.dates))
+        date = result.dates[0]
+        self.assertEqual(DateTimeTokenType.PERIOD, date.type)
+        self.assertEqual(2022, date.date_from.year)
+        self.assertEqual(1, date.date_from.month)
+        self.assertEqual(1, date.date_from.day)
+        self.assertEqual(2022, date.date_to.year)
+        self.assertEqual(12, date.date_to.month)
+        self.assertEqual(31, date.date_to.day)
+        self.assertIsNone(date.date_from.hour)
+        self.assertIsNone(date.date_to.hour)
 
 
 if __name__ == '__main__':

@@ -79,19 +79,18 @@ def convert_to_token(period: AbstractPeriod, now) -> DateTimeToken:
     if max_fixed == FixPeriod.YEAR:
         token.type = DateTimeTokenType.PERIOD
         token.date_from = PartialDateTime(year=period.date.year, month=1, day=1)
-        token.date_to = PartialDateTime(year=period.date.year + 1, month=1, day=1).replace(microsecond=999)
+        token.date_to = PartialDateTime(year=period.date.year, month=12, day=31)
     elif max_fixed == FixPeriod.MONTH:
         token.type = DateTimeTokenType.PERIOD
         token.date_from = PartialDateTime(year=period.date.year, month=period.date.month, day=1)
         token.date_to = PartialDateTime(year=period.date.year,
-                                        month=(period.date.month + 1) if period.date.month is not None else None,
-                                        day=1).replace(
-            microsecond=999)
+                                        month=period.date.month,
+                                        day=PartialDateTime.LAST_DAY_OF_MONTH)
     elif max_fixed == FixPeriod.WEEK:
         dow = period.date.weekday + 1
         token.type = DateTimeTokenType.PERIOD
         token.date_from = period.date + timedelta(days=(1 - dow))
-        token.date_to = (period.date + timedelta(days=(8 - dow))).replace(microsecond=999)
+        token.date_to = (period.date + timedelta(days=(7 - dow)))
     elif max_fixed == FixPeriod.DAY:
         token.type = DateTimeTokenType.FIXED
         token.date_from = period.date
